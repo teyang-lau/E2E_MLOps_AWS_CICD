@@ -83,6 +83,9 @@ The `tox` testing framework configuration:
 `-- tox.ini
 ```
 
+## AWS Tools Used
+* Code Pipeline — automate continuous delivery pipelines 
+
 ## To Do
 * Create simple preprocessing and xgboost pipeline on AWS
 * https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-projects-walkthrough-3rdgit.html
@@ -171,4 +174,25 @@ Updates on progress
 
 <br>
 
-2. 
+2. After uploading data to S3, in IAM role find AmazonSageMakerServiceCatalogProductsUseRole, add below policy in this role:
+https://github.com/aws/amazon-sagemaker-examples/issues/1923
+
+```
+{
+            "Effect": "Allow",
+            "Action": [
+                "s3:AbortMultipartUpload",
+                "s3:DeleteObject",
+                "s3:GetObject",
+                "s3:GetObjectVersion",
+                "s3:PutObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::<BUCKET_NAME>"
+            ]
+        }
+```
+
+## Useful Resources
+* https://docs.aws.amazon.com/sagemaker/latest/dg/build-and-manage-steps.html#step-type-training
+* https://github.com/aws/amazon-sagemaker-examples/blob/main/sagemaker-pipelines/tabular/custom_callback_pipelines_step/sagemaker-pipelines-callback-step.ipynb
