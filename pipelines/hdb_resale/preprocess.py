@@ -102,10 +102,12 @@ if __name__ == "__main__":
     TEST_RATIO = args.test_ratio
 
     logger.debug("Splitting data into train, validation, and test sets")
-    num_samples = len(data_processed)
-    train_num = round(TRAIN_RATIO * num_samples)
-    X_train, y_train = X[:train_num], y[:train_num]
-    X_val_test, y_val_test = X[train_num:], y[train_num:]
+    X_train, X_val_test, y_train, y_val_test = train_test_split(
+        X,
+        y,
+        test_size=1 - TRAIN_RATIO,
+        random_state=2023,
+    )
     X_val, X_test, y_val, y_test = train_test_split(
         X_val_test,
         y_val_test,
