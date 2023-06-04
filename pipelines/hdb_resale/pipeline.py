@@ -134,7 +134,7 @@ def get_pipeline(
     pipeline_name="HDBResalePipeline",
     base_job_prefix="HDBResale",
     processing_instance_type="ml.t3.medium",  # ml.m5.xlarge
-    training_instance_type="ml.m5.xlarge",  # ml.m5.xlarge
+    training_instance_type="ml.m5.large",  # ml.m5.xlarge
 ):
     """Gets a SageMaker ML Pipeline instance working with on HDB resale data.
 
@@ -163,6 +163,7 @@ def get_pipeline(
         name="InputDataUrl",
         # default_value=f"s3://sagemaker-servicecatalog-seedcode-{region}/dataset/abalone-dataset.csv",
         default_value="s3://hdb-resale/dataset/resale-flat-prices-2022-jan.csv",
+        # default_value="s3://hdb-resale/dataset/resale-flat-prices-2022.csv",
     )
 
     # processing step for feature engineering
@@ -198,7 +199,7 @@ def get_pipeline(
     image_uri = sagemaker.image_uris.retrieve(
         framework="xgboost",
         region=region,
-        version="1.3-1",
+        version="1.0-1",
         py_version="py3",
     )
 
@@ -212,56 +213,98 @@ def get_pipeline(
         "subsample": "0.7",
         "objective": "reg:squarederror",
         "eval_metric": "mae",
-        "nfold:": "1",
-        "early_stopping_rounds": "3",
+        # "nfold:": "1",
+        # "early_stopping_rounds": "3",
     }
 
     # Set XGBoost estimator
     # https://docs.aws.amazon.com/sagemaker/latest/dg/training-metrics.html
-    xgb_estimator = XGBoost(
-        entry_point="xgboost_train.py",
-        output_path=model_path,
-        code_location=model_path,
-        hyperparameters=hyperparams,
-        role=role,
-        # Fetch instance type and count from pipeline parameters
-        instance_count=1,
+    # xgb_estimator = XGBoost(
+    #     entry_point=os.path.join(BASE_DIR, "xgboost_train.py"),
+    #     output_path=model_path,
+    #     code_location=model_path,
+    #     hyperparameters=hyperparams,
+    #     role=role,
+    #     # Fetch instance type and count from pipeline parameters
+    #     instance_count=1,
+    #     instance_type=training_instance_type,
+    #     framework_version="1.3-1",
+    # )
+
+    xgb_train = Estimator(
+        image_uri=image_uri,
         instance_type=training_instance_type,
-        framework_version="1.3-1",
+        instance_count=1,
+        output_path=model_path,
+        base_job_name=f"{base_job_prefix}/abalone-train",
+        sagemaker_session=pipeline_session,
+        role=role,
+    )
+
+    xgb_train.set_hyperparameters(
+        num_round=10,  # change to 100
+        max_depth=3,
+        eta=0.2,
+        gamma=4,
+        min_child_weight=6,
+        subsample=0.7,
+        objective="reg:squarederror",
+        eval_metric="mae",
     )
 
     # Access the location where the preceding processing step saved train and validation datasets
     # Pipeline step properties can give access to outputs which can be used in succeeding steps
-    s3_input_train = TrainingInput(
-        s3_data=step_process.properties.ProcessingOutputConfig.Outputs[
-            "train"
-        ].S3Output.S3Uri,
-        content_type="text/csv",
-        # s3_data_type="S3Prefix",
-    )
-    s3_input_validation = TrainingInput(
-        s3_data=step_process.properties.ProcessingOutputConfig.Outputs[
-            "validation"
-        ].S3Output.S3Uri,
-        content_type="text/csv",
-        # s3_data_type="S3Prefix",
-    )
+    #     s3_input_train = TrainingInput(
+    #         s3_data=step_process.properties.ProcessingOutputConfig.Outputs[
+    #             "train"
+    #         ].S3Output.S3Uri,
+    #         content_type="text/csv",
+    #         # s3_data_type="S3Prefix",
+    #     )
+    #     s3_input_validation = TrainingInput(
+    #         s3_data=step_process.properties.ProcessingOutputConfig.Outputs[
+    #             "validation"
+    #         ].S3Output.S3Uri,
+    #         content_type="text/csv",
+    #         # s3_data_type="S3Prefix",
+    #     )
 
-    # Set pipeline training step
-    step_train = TrainingStep(
-        name="TrainHDBResaleXGBModel",
-        estimator=xgb_estimator,
+    #     # Set pipeline training step
+    #     step_train = TrainingStep(
+    #         name="TrainHDBResaleXGBModel",
+    #         estimator=xgb_estimator,
+    #         inputs={
+    #             "train": s3_input_train,  # Train channel
+    #             "validation": s3_input_validation,  # Validation channel
+    #         },
+    #     )
+
+    step_args = xgb_train.fit(
         inputs={
-            "train": s3_input_train,  # Train channel
-            "validation": s3_input_validation,  # Validation channel
+            "train": TrainingInput(
+                s3_data=step_process.properties.ProcessingOutputConfig.Outputs[
+                    "train"
+                ].S3Output.S3Uri,
+                content_type="text/csv",
+            ),
+            "validation": TrainingInput(
+                s3_data=step_process.properties.ProcessingOutputConfig.Outputs[
+                    "validation"
+                ].S3Output.S3Uri,
+                content_type="text/csv",
+            ),
         },
+    )
+    step_train = TrainingStep(
+        name="TrainHDBModel",
+        step_args=step_args,
     )
 
     # processing step for evaluation
     script_eval = ScriptProcessor(
         image_uri=image_uri,
         command=["python3"],
-        instance_type=training_instance_type,
+        instance_type=processing_instance_type,
         instance_count=1,
         base_job_name=f"{base_job_prefix}/script-hdbresale-eval",
         sagemaker_session=pipeline_session,
@@ -336,7 +379,7 @@ def get_pipeline(
             property_file=evaluation_report,
             json_path="regression_metrics.rmse.value",
         ),
-        right=6.0,
+        right=200000.0,
     )
     step_cond = ConditionStep(
         name="CheckRMSE_HDBResaleEvaluation",
