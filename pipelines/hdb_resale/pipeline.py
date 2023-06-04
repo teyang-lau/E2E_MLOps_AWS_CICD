@@ -161,7 +161,8 @@ def get_pipeline(
     )
     input_data = ParameterString(
         name="InputDataUrl",
-        default_value=f"s3://sagemaker-servicecatalog-seedcode-{region}/dataset/abalone-dataset.csv",
+        # default_value=f"s3://sagemaker-servicecatalog-seedcode-{region}/dataset/abalone-dataset.csv",
+        default_value="s3://hdb-resale/dataset/resale-flat-prices-2022-jan.csv",
     )
 
     # processing step for feature engineering
