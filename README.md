@@ -176,7 +176,7 @@ Updates on progress
 
 2. After uploading data to S3, in IAM role find AmazonSageMakerServiceCatalogProductsUseRole, add below policy in this role:
 https://github.com/aws/amazon-sagemaker-examples/issues/1923
-
+ 
 ```
 {
             "Effect": "Allow",
