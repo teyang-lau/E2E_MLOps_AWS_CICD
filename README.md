@@ -85,6 +85,7 @@ The `tox` testing framework configuration:
 
 ## AWS Tools Used
 * Code Pipeline — automate continuous delivery pipelines 
+* CodeBuild — continuous integration
 
 ## To Do
 * Create simple preprocessing and xgboost pipeline on AWS
@@ -125,6 +126,7 @@ reports:
 ## Log
 Updates on progress
 
+* 4 Jun 2023 — pipeline works in SageMaker for HDB dataset through notebook. Entire build works until deployment. Had to use xgboost as algo instead of framework (so not using xgboost_train.py for now)
 * 1 Jun 2023 — modified preprocess, xgboost_train, evaluate, and pipeline for SageMaker (haven't test if it works) 
 * 27 May 2023 — created preprocessing.py and xgboost_train.py with arguments (working on local)
 
@@ -188,7 +190,7 @@ https://github.com/aws/amazon-sagemaker-examples/issues/1923
                 "s3:PutObject"
             ],
             "Resource": [
-                "arn:aws:s3:::<BUCKET_NAME>"
+                "arn:aws:s3:::<BUCKET_NAME>/*"
             ]
         }
 ```
