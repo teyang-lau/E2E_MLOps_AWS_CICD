@@ -134,7 +134,7 @@ def get_pipeline(
     pipeline_name="HDBResalePipeline",
     base_job_prefix="HDBResale",
     processing_instance_type="ml.t3.medium",  # ml.m5.xlarge
-    training_instance_type="ml.m5.large",  # ml.m5.xlarge
+    training_instance_type="ml.m5.xlarge",  # ml.m5.xlarge
 ):
     """Gets a SageMaker ML Pipeline instance working with on HDB resale data.
 
