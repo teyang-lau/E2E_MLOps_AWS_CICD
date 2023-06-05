@@ -199,7 +199,7 @@ def get_pipeline(
     image_uri = sagemaker.image_uris.retrieve(
         framework="xgboost",
         region=region,
-        version="1.0-1",
+        version="1.5-1",
         py_version="py3",
     )
 
@@ -236,7 +236,7 @@ def get_pipeline(
         instance_type=training_instance_type,
         instance_count=1,
         output_path=model_path,
-        base_job_name=f"{base_job_prefix}/abalone-train",
+        base_job_name=f"{base_job_prefix}/HDBResale-train",
         sagemaker_session=pipeline_session,
         role=role,
     )
