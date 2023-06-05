@@ -20,10 +20,12 @@ if __name__ == "__main__":
     logger.debug("Starting evaluation.")
     model_path = "/opt/ml/processing/model/model.tar.gz"
     with tarfile.open(model_path) as tar:
-        tar.extractall(path=".")
+        tar.extractall(path="..")
 
     logger.debug("Loading xgboost model.")
-    model = pickle.load(open("xgboost-model", "rb"))
+    # model = pickle.load(open("xgboost-model", "rb"))
+    model = xgb.Booster()
+    model.load_model("xgboost-model")
 
     logger.debug("Reading test data.")
     test_path = "/opt/ml/processing/test/test.csv"
